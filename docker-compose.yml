@@ -1,0 +1,47 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # 1. PostgreSQL Database Service
+  postgres:
+    image: postgres:15-alpine # Use a specific, lightweight version. 'latest' can be unpredictable.
+    container_name: my_postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER} # Reads the value from the .env file
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      # Maps port 5432 on your host machine to port 5432 in the container.
+      # This allows you to connect to the DB from your local machine with a GUI tool.
+      - "5432:5432"
+    volumes:
+      # This is CRITICAL. It creates a "volume" named 'postgres_data' and mounts it
+      # inside the container. This ensures your data persists even if the container is removed.
+      - postgres_data:/var/lib/postgresql/data
+  backend:
+    build:
+      context: ./backend # Tells Docker Compose to look for the Dockerfile in the ./backend folder
+    container_name: my_backend_app
+    restart: unless-stopped
+    ports:
+      # Maps port 5000 on your host to port 5000 in the container.
+      # This is how our local React app will talk to the backend.
+      - "5000:5000"
+    env_file:
+      - .env # Loads all variables from the .env file into this container
+    depends_on:
+      - postgres # Tells Docker to start the postgres container before this one
+    volumes:
+      # Mounts our local ./backend code into the container's /app directory.
+      # This enables hot-reloading with nodemon. When you save a file locally,
+      # it changes inside the container, and nodemon restarts the server.
+      - ./backend:/app
+      # Anonymize node_modules to prevent local/container conflicts.
+      # This tells Docker to use the node_modules folder that was built inside
+      # the container, not one from your host machine (which might be incompatible).
+      - /app/node_modules
+
+# This top-level key defines the named volume we referenced above.
+volumes:
+  postgres_data:
