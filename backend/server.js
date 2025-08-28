@@ -66,8 +66,23 @@ io.on('connection', (socket) => {
       message: data.message,
       senderId: socket.id
     });
-  });
 
+  });
+socket.on('add_user', (data)=>{
+  console.log(data.user);
+  // const result = data.json();
+  // console.log(result)
+  // console.log(data.name,data.age)
+  // async (res,req)=>{
+  //   try{
+  //     const result = await pool.query(`INSERT INTO People (Name, Age) VALUES (${data.name},${data.age})`);
+  //     // res.json({})
+  //     console.log("send the message succesfully")
+  //   }catch{
+  //     console.error("database query error")
+  //   }
+  // }
+})
   socket.on('disconnect', () => {
     console.log('❌ User disconnected:', socket.id);
   });

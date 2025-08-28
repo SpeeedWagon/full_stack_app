@@ -6,8 +6,21 @@ import './App.css';
 // The backend URL. This is where our React app will send requests.
 const SOCKET_SERVER_URL = 'http://localhost:5000';
 
+function setNewName(name,user,setUser){
+  const new_name = name;
+  const new_obj = {name:new_name,age:user.age}
+  setUser(new_obj)
+}
+
+function setNewAge(age,user,setUser){
+  const new_age = age;
+  const new_obj = {name:user.name,age:new_age}
+  setUser(new_obj)
+}
+
 function App() {
   const [socket, setSocket] = useState(null);
+  const [user,setUser] = useState({name:"",age:""});
   const [dbStatus, setDbStatus] = useState('Checking DB connection...');
   const [message, setMessage] = useState('');
   const [chatLog, setChatLog] = useState([]);
@@ -39,6 +52,8 @@ function App() {
       setChatLog(prevLog => [...prevLog, data]);
     });
 
+
+
     // Clean up the connection when the component unmounts
     return () => newSocket.close();
   }, []);
@@ -50,6 +65,15 @@ function App() {
       setMessage('');
     }
   };
+
+  const addUser = (e) =>{
+    e.preventDefault();
+    if(socket && user.name!="" && user.age!=""){
+      console.log(user)
+      socket.emit('add_user',{user});
+      setUser({name:"",age:""});
+    }
+  }
 
   return (
     <div className="App">
@@ -72,6 +96,27 @@ function App() {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Type a message..."
+            />
+            <button type="submit">Send</button>
+          </form>
+        </div>
+        <div>
+          <form onSubmit={addUser}>
+            <input 
+              type='text'
+              value={user.name}
+              onChange={(e)=>{
+                setNewName(e.target.value,user,setUser)
+              }}
+              placeholder="Type the name"
+            />
+             <input 
+              type='text'
+              value={user.age}
+              onChange={(e)=> {
+                setNewAge(e.target.value,user,setUser)
+              }}
+              placeholder="Type the age"
             />
             <button type="submit">Send</button>
           </form>

@@ -19,6 +19,16 @@ services:
       # This is CRITICAL. It creates a "volume" named 'postgres_data' and mounts it
       # inside the container. This ensures your data persists even if the container is removed.
       - postgres_data:/var/lib/postgresql/data
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: adminpassword
+    ports:
+      - "8000:80"
+    depends_on:
+      - postgres
   backend:
     build:
       context: ./backend # Tells Docker Compose to look for the Dockerfile in the ./backend folder
