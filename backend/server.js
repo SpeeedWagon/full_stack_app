@@ -1,15 +1,18 @@
 // backend/server.js
 require('dotenv').config({ path: '../.env' }); // Load .env file from the root
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
-const { Pool } = require('pg'); // PostgreSQL client
+const { Pool, Connection } = require('pg'); // PostgreSQL client
 
 // === Basic Setup ===
 const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
+
+app.use(express.json());
 
 // === CORS Configuration ===
 // This is CRUCIAL. Your React app (running on localhost:3000) is a different
@@ -19,13 +22,15 @@ const corsOptions = {
   origin: 'http://localhost:3000', // Allow requests from your React app
   methods: ['GET', 'POST'],
 };
-app.use(cors(corsOptions));
+
+
 
 // === Initialize Socket.IO with CORS ===
 const io = new Server(server, {
   cors: corsOptions,
 });
 
+app.use(cors(corsOptions));
 // === PostgreSQL Connection ===
 // The Pool will manage connections to the database.
 const pool = new Pool({
@@ -41,7 +46,36 @@ console.log("DB Connection Details:", {
     database: process.env.DB_NAME,
 });
 
+app.post('/api/set/user', async (req, res) => { // 1. Make the handler async
+  try {
+     
+// return res.status(200).json(req.body);
+    const { name, age } = req.body;
 
+    // A simple validation check
+    if (!name || age === undefined) {
+      return res.status(400).json({ message: 'Name and age are required.' });
+    }
+
+    // Use $1, $2 placeholders. RETURNING * sends back the row that was just created.
+    const sql = 'INSERT INTO "People" ("Name", "Age") VALUES ($1, $2) RETURNING *';
+    const values = ['{'+name+'}', age];
+
+    // 2. Await the result from the database query
+    const result = await pool.query(sql, values);
+
+    // 3. Send a successful JSON response
+    res.status(201).json({
+      message: 'User inserted successfully!',
+      user: result.rows[0] // The new user data from the DB
+    });
+
+  } catch (err) {
+    // 4. Catch any errors that happen in the 'try' block
+    console.error('Database query error:', err);
+    res.status(500).json({ message: 'Failed to insert user into database.' });
+  }
+});
 // === API Routes ===
 app.get('/api/users', async (req, res) => {
   try {
@@ -68,14 +102,12 @@ io.on('connection', (socket) => {
     });
 
   });
-socket.on('add_user', (data)=>{
-  console.log(data.user);
-  // const result = data.json();
-  // console.log(result)
-  // console.log(data.name,data.age)
+socket.on('add_user',(data)=>{
+
+  // console.log(data.user.name,data.user.age)
   // async (res,req)=>{
   //   try{
-  //     const result = await pool.query(`INSERT INTO People (Name, Age) VALUES (${data.name},${data.age})`);
+  //     const result = await pool.query(`INSERT INTO People (Name, Age) VALUES (${data.user.name},${data.user.age})`);
   //     // res.json({})
   //     console.log("send the message succesfully")
   //   }catch{

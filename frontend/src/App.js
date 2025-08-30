@@ -1,5 +1,6 @@
 // frontend/src/App.js
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import io from 'socket.io-client';
 import './App.css';
 
@@ -69,7 +70,20 @@ function App() {
   const addUser = (e) =>{
     e.preventDefault();
     if(socket && user.name!="" && user.age!=""){
-      console.log(user)
+      // console.log(user)
+      axios({
+        method:'POST',
+        url:`${SOCKET_SERVER_URL}/api/set/user`,
+        headers: {
+        'Content-Type': 'application/json',
+       },
+        data:JSON.stringify(user)
+      }).then(res => {
+  console.log("res", res);
+})
+.catch(err => {
+  console.log("error in request", err);
+});
       socket.emit('add_user',{user});
       setUser({name:"",age:""});
     }
